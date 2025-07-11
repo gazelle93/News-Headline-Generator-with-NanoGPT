@@ -14,7 +14,7 @@ def main(args):
     os.makedirs(checkpoint_dir, exist_ok=True)
 
     # Update Config values with parsed arguments
-    Config.vocab_size = args.vocab_size
+    Config.VOCAB_SIZE = args.vocab_size
     Config.MIN_FREQUENCY = args.min_frequency
 
     Config.block_size = args.block_size
