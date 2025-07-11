@@ -45,7 +45,7 @@ class SingleHeadAttention(nn.Module):
         output = masked_probs @ v
 
         return output
-
+        
 class MultiHeadSelfAttention(nn.Module):
     def __init__(self):
         super().__init__()
@@ -78,7 +78,50 @@ class MLP(nn.Module):
     def forward(self, input_emb):
         return self.layer(input_emb)
     
-    
+class MoEFeedForward(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.num_experts = Config.num_experts
+        self.top_k = Config.top_k
+        self.experts = nn.ModuleList([
+            nn.Sequential(
+                nn.Linear(Config.emb_dim, Config.dim_expansion * Config.emb_dim),
+                nn.ReLU(),
+                nn.Linear(Config.dim_expansion * Config.emb_dim, Config.emb_dim),
+                nn.Dropout(Config.dropout)
+            ) for _ in range(Config.num_experts)
+        ])
+        
+        # It learns to assign weights to each expert for each token.
+        self.router = nn.Linear(Config.emb_dim, Config.num_experts)
+
+    def forward(self, input_emb):
+        # x: (batch, seq, embed)
+        batch_size, seq_len, emb_dim = input_emb.shape
+        route_logits = self.router(input_emb)  # (batch, seq, num_experts)
+        route_weights = F.softmax(route_logits, dim=-1)  # probabilities
+
+        # Top-k routing (zero-out all but top-k)
+        topk_vals, topk_idx = torch.topk(route_weights, self.top_k, dim=-1)
+        mask = torch.zeros_like(route_weights)
+        mask.scatter_(-1, topk_idx, 1.0)
+        routed_weights = route_weights * mask  # zero-out all but top-k
+        routed_weights = routed_weights / routed_weights.sum(dim=-1, keepdim=True)  # renormalize
+
+        # Compute each expert output
+        expert_outputs = []
+        for expert in self.experts:
+            expert_outputs.append(expert(input_emb))  # (batch, seq, embed) for each
+
+        # Stack: (num_experts, batch, seq, embed)
+        expert_outputs = torch.stack(expert_outputs, dim=0)
+
+        # Weighted sum over experts
+        routed_weights = routed_weights.permute(2, 0, 1).unsqueeze(-1)  # (num_experts, batch, seq, 1)
+        output = (routed_weights * expert_outputs).sum(dim=0)  # (batch, seq, embed)
+
+        return output
+        
 class TransformerBlock(nn.Module):
 
     def __init__(self):
@@ -86,7 +129,10 @@ class TransformerBlock(nn.Module):
         self.norm_1 = LayerNorm()
         self.attn = MultiHeadSelfAttention()
         self.norm_2 = LayerNorm()
-        self.feedforward = MLP()
+        if Config.isMoe:
+            self.feedforward = MoEFeedForward()
+        else:
+            self.feedforward = MLP()
 
     def forward(self, input_emb):
         normed_output_1 = self.norm_1(input_emb)
