@@ -24,6 +24,10 @@ class BaseConfig(object):
     dim_expansion = 4
     bias = False
 
+    isMoe = False
+    num_experts = 4
+    top_k = 2
+
     initial_lr = 3e-4
     min_lr = 1e-4
 
