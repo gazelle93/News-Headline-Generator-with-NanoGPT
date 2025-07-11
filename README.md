@@ -146,7 +146,7 @@ Generated Title:
 The generated title based on the given news body input.
 ```
 
-Mixture-of-Experts (MoE) Support
+## Mixture-of-Experts (MoE) Support
 This project optionally supports Mixture-of-Experts (MoE) layers in the Transformer feedforward blocks. When enabled:
 - Each feedforward layer contains multiple experts (MLPs).
 - A learned gating network selects the top-k experts for each token.
