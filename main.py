@@ -6,11 +6,32 @@ import utils
 import train_and_test
 
 from model import GPT
+import argparse
 from config import Config
 
-def main():
+def main(args):
     checkpoint_dir = "./results"
     os.makedirs(checkpoint_dir, exist_ok=True)
+
+    # Update Config values with parsed arguments
+    Config.vocab_size = args.vocab_size
+    Config.MIN_FREQUENCY = args.min_frequency
+
+    Config.block_size = args.block_size
+    Config.emb_dim = args.emb_dim
+    Config.num_heads = args.num_heads
+    Config.num_layers = args.num_layers
+    Config.dropout = args.dropout
+    Config.dim_expansion = args.dim_expansion
+    Config.bias = args.bias
+
+    Config.isMoe = args.isMoe
+    Config.num_experts = args.num_experts
+    Config.top_k = args.top_k
+
+    Config.initial_lr = args.initial_lr
+    Config.min_lr = args.min_lr
+    Config.batch_size = args.batch_size
 
     # DATA PREPROCESSING (Uncomment if needed)
     # print("Preprocessing data for tokenizer...")
@@ -83,6 +104,31 @@ def main():
         print(f"Generated Title:\n{generated_title}")
         print("=======================================")
 
-
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Train a GPT model with or without Mixture of Experts")
+
+    # Tokenizer / Vocab
+    parser.add_argument("--vocab_size", type=int, default=Config.VOCAB_SIZE, help="Vocabulary size")
+    parser.add_argument("--min_frequency", type=int, default=Config.MIN_FREQUENCY, help="Minimum token frequency for tokenizer")
+
+    # Model architecture
+    parser.add_argument("--block_size", type=int, default=Config.block_size, help="Context window size")
+    parser.add_argument("--emb_dim", type=int, default=Config.emb_dim, help="Embedding dimension")
+    parser.add_argument("--num_heads", type=int, default=Config.num_heads, help="Number of attention heads")
+    parser.add_argument("--num_layers", type=int, default=Config.num_layers, help="Number of transformer layers")
+    parser.add_argument("--dropout", type=float, default=Config.dropout, help="Dropout rate")
+    parser.add_argument("--dim_expansion", type=int, default=Config.dim_expansion, help="Feed-forward dimension expansion ratio")
+    parser.add_argument("--bias", action="store_true", default=Config.bias, help="Use bias in Linear layers")
+
+    # Mixture of Experts
+    parser.add_argument("--isMoe", action="store_true", default=Config.isMoe, help="Enable Mixture of Experts")
+    parser.add_argument("--num_experts", type=int, default=Config.num_experts, help="Number of experts in MoE")
+    parser.add_argument("--top_k", type=int, default=Config.top_k, help="Number of top experts to use per token")
+
+    # Training hyperparameters
+    parser.add_argument("--initial_lr", type=float, default=Config.initial_lr, help="Initial learning rate")
+    parser.add_argument("--min_lr", type=float, default=Config.min_lr, help="Minimum learning rate")
+    parser.add_argument("--batch_size", type=int, default=Config.batch_size, help="Batch size")
+    
+    args = parser.parse_args()
+    main(args)
