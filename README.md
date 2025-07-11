@@ -40,6 +40,8 @@ Given a body of news text, the model generates a relevant title. For example:
 - Trains a simple GPT-style Transformer on paired news text and titles.
 - Custom tokenizer (ByteLevel BPE).
 - Supports checkpoint saving and resuming.
+- Optional Mixture-of-Experts (MoE) feedforward layer for increased model capacity and conditional computation.
+- Command-line overrides for configuration.
 - Generates titles given new news text bodies.
 
 ---
@@ -141,22 +143,42 @@ Input News Body:
 <s> The given news body input <sep>
 
 Generated Title:
-The genereated title based on the given news body input.
+The generated title based on the given news body input.
 ```
 
+Mixture-of-Experts (MoE) Support
+This project optionally supports Mixture-of-Experts (MoE) layers in the Transformer feedforward blocks. When enabled:
+- Each feedforward layer contains multiple experts (MLPs).
+- A learned gating network selects the top-k experts for each token.
+- Enables conditional computation, scaling model capacity efficiently.
+
+Enable MoE via command-line:
+```bash
+python main.py --isMoe --num_experts 8 --top_k 2
+```
 
 ---
 
 ## Configuration
 
 You can modify `config.py` for:
-
-- Model dimensions
-- Device selection
-- Paths
-- Batch size
-- Learning rate
-- ...
+| Parameter        | Default (from config.py) | Description                              |
+| ---------------- | ------------------------ | ---------------------------------------- |
+| --vocab\_size    | 5000                     | Vocabulary size for tokenizer and model  |
+| --min\_frequency | 2                        | Minimum frequency for BPE tokenizer      |
+| --block\_size    | 256                      | Context window length                    |
+| --emb\_dim       | 512                      | Embedding dimension                      |
+| --num\_heads     | 4                        | Number of attention heads                |
+| --num\_layers    | 1                        | Number of transformer blocks             |
+| --dropout        | 0.1                      | Dropout rate                             |
+| --dim\_expansion | 4                        | Feedforward dimension expansion ratio    |
+| --bias           | False                    | Include bias in Linear layers            |
+| --isMoe          | False                    | Use Mixture-of-Experts feedforward layer |
+| --num\_experts   | 4                        | Number of experts in MoE                 |
+| --top\_k         | 2                        | Top-k experts selected in MoE gating     |
+| --initial\_lr    | 3e-4                     | Initial learning rate                    |
+| --min\_lr        | 1e-4                     | Minimum learning rate                    |
+| --batch\_size    | 450                      | Batch size for training                  |
 
 Example:
 
@@ -178,6 +200,10 @@ class Config:
     dropout = 0.1
     dim_expansion = 4
     bias = False
+
+    isMoe = False
+    num_experts = 4
+    top_k = 2
 
     initial_lr = 3e-4
     min_lr = 1e-4
