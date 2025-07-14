@@ -3,10 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from config import Config
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
 class LayerNorm(nn.Module):
     """ LayerNorm but with an optional bias. PyTorch doesn't support simply bias=False """
 
