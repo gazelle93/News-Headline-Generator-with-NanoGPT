@@ -131,6 +131,7 @@ class TransformerBlock(nn.Module):
             self.feedforward = MLP()
 
     def forward(self, input_emb):
+        # Pre-LN (LayerNorm before each sub-layer)
         normed_output_1 = self.norm_1(input_emb)
         attention_output = self.attn(normed_output_1)
         residual_connection_output_1 = input_emb + attention_output
